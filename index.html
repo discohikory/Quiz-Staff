@@ -71,7 +71,7 @@ footer strong{color:#fff}
   <div class="hero-t">
     <p class="eyebrow">ENTRENAMIENTO · STAFF MINECRAFT</p>
     <h1>Quiz Staff</h1>
-    <p class="lead">12 preguntas de normativa, comandos y criterio. 30 segundos por pregunta, puntos por rapidez y rachas. Récord: <b id="bestLine">0</b> pts.</p>
+    <p class="lead">20 preguntas de normativa, comandos y criterio. 30 segundos por pregunta, puntos por rapidez y rachas. Récord: <b id="bestLine">0</b> pts.</p>
   </div>
   <div id="screen-start" class="card glass center">
     <h2 style="font-family:'Space Grotesk';margin-top:0">Elige categoría</h2>
@@ -95,6 +95,13 @@ footer strong{color:#fff}
     <div class="rowbtns"><button class="btn primary" id="qRetry">Jugar otra vez ↻</button><button class="btn" id="qAi">🤖 Analiza mi desempeño</button></div>
     <div class="ai-slot" id="qAiOut"></div>
   </div>
+  <div class="card glass">
+    <h2 style="font-family:'Space Grotesk';margin-top:0">🤖 Caso generado por IA</h2>
+    <p class="muted">La IA inventa una pregunta nueva cada vez. Elígela y responde sin límite de tiempo.</p>
+    <div class="chips" id="aiQChips"></div>
+    <div class="rowbtns" style="justify-content:center"><button class="btn primary" id="aiQGo">Generar pregunta ✨</button></div>
+    <div id="aiQBox" style="margin-top:12px"></div>
+  </div>
 </main>
 <footer>© 2026 Daniel Esteban Vera Fernandez · <strong>Discohikorybrs</strong> · Todos los derechos reservados.<br><small>Quiz con fines educativos. Hecho con ⛏️</small></footer>
 <script>
@@ -110,7 +117,15 @@ const QS=[
  {c:"Criterio",q:"Acusan de hacks pero no hay evidencia suficiente.",o:["Banear por precaución","Pedir pruebas y vigilar en invisible","Ignorar el reporte","Mutear al acusado 1 hora"],a:1,w:"Sin evidencia no se sanciona: se pide pruebas y se observa."},
  {c:"Criterio",q:"Tu amigo publicita otro servidor en el general.",o:["Perdonarlo por amistad","Sancionarlo igual y hablarle en privado","Que lo sancione otro staff","Borrar el mensaje sin más"],a:1,w:"La normativa aplica a todos por igual; en privado cuidas la relación."},
  {c:"Criterio",q:"Insulto en caliente + disculpa inmediata.",o:["Ban permanente","Mute leve + mediación","No hacer nada","Ban 30 días"],a:1,w:"Proporcionalidad: sanción leve, mediación y constancia en historial."},
- {c:"Criterio",q:"Griefing de 200 bloques con logs claros.",o:["Pedir más pruebas","Sancionar + rollback","Solo advertir","Esperar a que la víctima insista"],a:1,w:"Con evidencia sólida se actúa: sanción tipificada + reparación."}
+ {c:"Criterio",q:"Griefing de 200 bloques con logs claros.",o:["Pedir más pruebas","Sancionar + rollback","Solo advertir","Esperar a que la víctima insista"],a:1,w:"Con evidencia sólida se actúa: sanción tipificada + reparación."},
+ {c:"Normativa",q:"Flood por segunda vez en el chat.",o:["Aviso verbal","Mute 30 minutos","Mute 2 horas","Ban 1 día"],a:1,w:"Flood en segunda vez: mute 30 minutos (Art. 3.1). La escala sube con la reincidencia."},
+ {c:"Normativa",q:"Insulto discriminatorio, primera vez.",o:["Mute 12 horas","Ban 14 días","Ban permanente","Mute 3 días"],a:1,w:"Discriminación en primera vez: ban 14 días (Art. 7.2)."},
+ {c:"Normativa",q:"Griefing menor y el jugador ofrece reparar el daño.",o:["Ban 1 día igual","Advertencia + reparación","Mute 2 horas","No hacer nada"],a:1,w:"Griefing menor primera vez con reparación: advertencia + reparar (Art. 5.4)."},
+ {c:"Comandos",q:"¿Comando correcto para dar 64 diamantes a Alex?",o:["/give Alex diamond 64","/give Alex minecraft:diamond 64","/give minecraft:diamond Alex 64","/item Alex diamond 64"],a:1,w:"Sintaxis: /give <jugador> <item> [cantidad], con el ID completo del item."},
+ {c:"Comandos",q:"¿Cómo ves el dinero de otro jugador?",o:["/money ver","/bal <jugador>","/eco check","/baltop <jugador>"],a:1,w:"Es /bal <jugador>. El baltop solo muestra el ranking."},
+ {c:"Comandos",q:"Un usuario necesita ayuda privada en Discord.",o:["!ticket <asunto>","!report","!help","!canal"],a:0,w:"!ticket <asunto> abre un canal privado de soporte."},
+ {c:"Criterio",q:"Te equivocas y muteas 1 día en vez de 1 hora.",o:["Dejarlo, ya está hecho","Corregir, disculparte y registrarlo","Quitarlo sin decir nada","Culpar al reglamento"],a:1,w:"Los errores se corrigen en público cuando toca: corrige, discúlpate y deja constancia."},
+ {c:"Criterio",q:"Dos staffs discuten una sanción en el chat público.",o:["Apoyar al de mayor rango ahí mismo","Llevarlo a privado y unificar criterio","Discutirlo en público también","Ignorarlo, no es tu problema"],a:2,w:"Los desacuerdos del Staff jamás van en público: privado, criterio único y luego se comunica."}
 ];
 const RANKS=[[1,"Fundador 👑"],[0.8,"Admin ⚡"],[0.6,"Moderador 🛡️"],[0.4,"Helper en pruebas 🛠️"]];
 const esc=v=>{const d=document.createElement('div');d.textContent=v;return d.innerHTML};
@@ -225,6 +240,53 @@ document.getElementById('qAi').addEventListener('click',()=>{
     slot.innerHTML=`<pre class="tpl ai-pre"></pre><small class="muted">Vía ${r.via} 🤖</small>`;
     slot.querySelector('.ai-pre').textContent=r.text;
   }).catch(()=>{slot.innerHTML='<small class="muted">La IA no responde ahora. Intenta luego. ⚠️</small>'}).finally(()=>{btn.disabled=false});
+});
+let aiQCat="Aleatoria";
+const aiQChipsEl=document.getElementById('aiQChips');
+aiQChipsEl.innerHTML=["Aleatoria","Normativa","Comandos","Criterio"].map(c=>`<button class="chip${c===aiQCat?" active":""}" data-aiqc="${c}">${c}</button>`).join('');
+aiQChipsEl.querySelectorAll('[data-aiqc]').forEach(b=>b.addEventListener('click',()=>{
+  aiQCat=b.dataset.aiqc;
+  aiQChipsEl.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b));
+}));
+let aiQ=null;
+function parseAIQ(t){
+  const lines=t.split('\n').map(s=>s.trim()).filter(Boolean);
+  const g=re=>{const l=lines.find(x=>re.test(x));return l?l.replace(re,'').trim():''};
+  const q=g(/^PREGUNTA\s*:/i),a=g(/^A\)/),b=g(/^B\)/),c=g(/^C\)/);
+  const cm=(g(/^CORRECTA\s*:/i).toUpperCase().match(/[ABC]/)||[])[0];
+  const ex=g(/^EXPLICA\s*:/i);
+  if(!q||!a||!b||!c||!cm||!ex)return null;
+  return{q,opts:[a,b,c],a:'ABC'.indexOf(cm),w:ex};
+}
+function renderAIQ(){
+  const box=document.getElementById('aiQBox');
+  box.innerHTML=`<h3 style="font-family:'Space Grotesk'">${esc(aiQ.q)}</h3><div>${aiQ.opts.map((o,j)=>`<button class="opt" data-aiqo="${j}">${esc(o)}</button>`).join('')}</div><div id="aiQFb"></div><div class="rowbtns"><button class="btn" id="aiQMore" style="display:none">Otra pregunta ↻</button></div>`;
+  box.querySelectorAll('[data-aiqo]').forEach(btn=>btn.addEventListener('click',()=>{
+    box.querySelectorAll('[data-aiqo]').forEach((o,k)=>{o.disabled=true;if(k===aiQ.a)o.classList.add('ok')});
+    if(Number(btn.dataset.aiqo)===aiQ.a){
+      document.getElementById('aiQFb').innerHTML=`<p class="why">✅ ¡Correcto! ${esc(aiQ.w)}</p>`;
+    }else{
+      btn.classList.add('bad');
+      document.getElementById('aiQFb').innerHTML=`<p class="why">❌ Incorrecto. ${esc(aiQ.w)}</p>`;
+    }
+    document.getElementById('aiQMore').style.display='inline-block';
+  }));
+  document.getElementById('aiQMore').addEventListener('click',()=>document.getElementById('aiQGo').click());
+}
+document.getElementById('aiQGo').addEventListener('click',()=>{
+  const box=document.getElementById('aiQBox'),btn=document.getElementById('aiQGo');
+  box.innerHTML='<p class="muted">Generando pregunta… ⏳</p>';btn.disabled=true;
+  aiChat(`Crea UNA pregunta tipo quiz para entrenar Staff de servidor Minecraft, categoría ${aiQCat} (español neutro). Responde EXACTAMENTE con este formato, sin texto extra:
+PREGUNTA: <situación concreta + pregunta>
+A) <opción>
+B) <opción>
+C) <opción>
+CORRECTA: <solo la letra A, B o C>
+EXPLICA: <por qué es correcta y por qué no las otras, máximo 60 palabras>`).then(r=>{
+    aiQ=parseAIQ(r.text);
+    if(!aiQ){box.innerHTML='<p class="muted">Salió mal formada. Pulsa generar de nuevo. ⚠️</p>'}
+    else renderAIQ();
+  }).catch(()=>{box.innerHTML='<p class="muted">La IA no responde ahora. Intenta luego. ⚠️</p>'}).finally(()=>{btn.disabled=false});
 });
 </script>
 </body>
